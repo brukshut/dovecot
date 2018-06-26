@@ -1,0 +1,42 @@
+{
+  "builders": [{
+    "type": "docker",
+    "image": "debian:latest",
+    "commit": true,
+    "pull": true,
+    "changes": [
+      "LABEL version=0.1",
+      "CMD /usr/local/sbin/dovecot -F"
+    ]    
+  }],
+  "provisioners": [
+    {
+      "type": "file",
+      "source": "files/dovecot.conf",
+      "destination": "/tmp/dovecot.conf"
+    },
+    {
+      "type": "file",
+      "source": "files/10-ssl.conf",
+      "destination": "/tmp/10-ssl.conf"
+    },
+    {
+      "type": "file",
+      "source": "files/dovecot.pem",
+      "destination": "/tmp/dovecot.pem"
+    },
+    {
+      "type": "shell",
+      "scripts": [
+        "scripts/install_packages.sh",
+        "scripts/build_openssl.sh",
+        "scripts/build_dovecot.sh"
+      ]
+    }
+  ],
+  "post-processors": [{
+    "type": "docker-tag",
+    "repository": "dovecot-base",
+    "tag": "0.1"
+  }]
+}
