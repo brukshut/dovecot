@@ -1,0 +1,74 @@
+---
+- name: install epel repo
+  yum:
+    name: "{{ epel_remote_src }}"
+    state: present
+  when:
+    - ansible_distribution == 'CentOS'
+ 
+- name: import epel gpg key
+  rpm_key:
+    key: "{{ epel_gpg_key_url }}"
+    state: present
+  when:
+    - ansible_distribution == 'CentOS'
+
+- name: install common packages
+  ansible.builtin.apt:
+    name: "{{ packages }}"
+    install_recommends: no
+    update_cache: yes
+  when:
+    - ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'  
+  vars:
+    packages:
+      - build-essential
+      - libgnutls30
+      - libgnutls28-dev
+      - libgnutls-openssl27
+      - libssl-dev
+      - pkg-config
+      - rsync
+      - sudo
+
+- name: remove unattended-upgrades (debian)
+  ansible.builtin.apt:
+    name: unattended-upgrades
+    state: absent
+  when:
+    - ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+
+- name: install common packages (centos)
+  ansible.builtin.yum:
+    name: "{{ packages }}"
+  when:
+    - ansible_distribution == 'CentOS'
+  vars:
+    packages:
+      - "@Development tools"
+      - bind-utils
+      - bzip2
+      - bzip2-devel
+      - curl
+      - git
+      - gnutls-devel
+      - gzip
+      - jq
+      - libffi-devel
+      - lsof
+      - make
+      - nmap-ncat
+      - nmap
+      - ncurses-devel
+      - openssl11
+      - openssl11-devel
+      - python3
+      - python3-pip
+      - pcre-devel
+      - readline-devel
+      - sudo
+      - wget
+      - which
+      - vim
+      - zlib-devel
+

@@ -1,0 +1,30 @@
+#!/usr/bin/env ansible-playbook
+##
+## dovecot playbook
+##
+---
+- name: dovecot
+  hosts: all
+  become: yes
+
+  pre_tasks:
+  - name: install common packages
+    ansible.builtin.apt:
+      name: "{{ packages }}"
+      install_recommends: no
+      update_cache: yes
+    when:
+      - ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'  
+    vars:
+      packages:
+        - build-essential
+        - libgnutls30
+        - libgnutls28-dev
+        - libgnutls-openssl27
+        - libssl-dev
+        - pkg-config
+        - rsync
+        - sudo
+
+  roles:
+    - ../roles/dovecot

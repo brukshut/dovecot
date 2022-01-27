@@ -1,0 +1,8 @@
+version: "2.3"
+services:
+  dovecot:
+    build: .
+    ports:
+      - "2993:993"
+    volumes:
+      - ./files/ssl:/etc/dovecot/ssl:rw

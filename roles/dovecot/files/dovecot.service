@@ -1,0 +1,11 @@
+[Unit]
+Description=dovecot imap
+After=local-fs.target network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/sbin/dovecot -F
+NonBlocking=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -2,22 +2,25 @@
 
 ##
 ## install_packages.sh
-## libsasl2-dev --> sasl2 headers
-## libdb5.3-dev --> berkeley db headers
 ##
-
 PATH=/bin:/sbin:/usr/bin:/usr/sbin
-DEBIAN_FRONTEND="noninteractive"
 
-## install required packages
-apt-get update -y
-apt-get install build-essential -y
-apt-get install git -y
-apt-get install rsync -y
-apt-get install man -y
-apt-get install vim -y
-apt-get install wget -y
-apt-get install sudo -y
+## functions
+function install_apt {
+  DEBIAN_FRONTEND="noninteractive"
+  apt-get update -y
+  for pkg in python3 build-essential sudo rsync vim libssl-dev libpam0g-dev; do
+    apt-get install $pkg -y
+  done
+}
 
-## dovecot requires this
-sudo apt-get install libpam0g-dev -y
+function install_apk {
+  for pkg in bash sudo vim rsync openssl; do
+    apk add $pkg --update --no-cache
+  done
+}
+## end functions
+
+## main
+[[ -e /etc/alpine-release ]] && install_apk
+[[ -e /etc/debian_version ]] && install_apt

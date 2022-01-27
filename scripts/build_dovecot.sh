@@ -7,8 +7,8 @@
 ##
 PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 NAME=dovecot
-VERSION=2.3.1
-URL=https://dovecot.org/releases/2.3/dovecot-2.3.1.tar.gz
+VERSION=2.3.17
+URL=https://dovecot.org/releases/2.3/dovecot-2.3.17.tar.gz
 CC=/usr/bin/gcc
 CXX=/usr/bin/g++
 LD=/usr/bin/ld
@@ -60,5 +60,3 @@ sudo chown dovecot:dovecot /var/dovecot
 cd ..
 rm ${URL##*/}
 rm -rf ${NAME}-${VERSION}
-
-
