@@ -1,0 +1,5 @@
+---
+make_jobs: 2
+dovecot_version: 2.3.16
+dovecot_remote_src: "https://dovecot.org/releases/2.3/dovecot-{{ dovecot_version }}.tar.gz"
+dovecot_local_src: "/usr/local/src/dovecot-{{ dovecot_version }}"

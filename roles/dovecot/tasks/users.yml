@@ -1,0 +1,27 @@
+---
+- name: load users
+  include_vars: vars/secrets.yml
+  tags: users
+
+- name: create mail user groups
+  ansible.builtin.group:
+    name: "{{ item.username }}"
+    gid: "{{ item.uid }}"
+  with_items: "{{ users }}"
+  no_log: True
+  loop_control:
+    label: "{{ item }}"
+  tags: users
+
+- name: create mail users
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    group: "{{ item.username }}"
+    uid: "{{ item.uid }}"
+    password: "{{ item.password }}"
+    shell: "{{ item.shell }}"
+  with_items: "{{ users }}"
+  no_log: True
+  loop_control:
+    label: "{{ item }}"
+  tags: users

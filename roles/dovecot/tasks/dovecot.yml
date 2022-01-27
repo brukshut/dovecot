@@ -1,0 +1,189 @@
+---
+- name: load secrets
+  include_vars:
+    file: vars/secrets.yml
+
+- name: install dovecot required packages
+  ansible.builtin.apt:
+    name: "{{ item }}"
+    install_recommends: no
+  with_items:
+    - libpam-dev
+    - rsync
+  when:
+    - ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  tags: build
+
+- name: create dovecot group
+  ansible.builtin.group:
+    name: dovecot
+    gid: 993
+  tags: users
+
+- name: create dovecot user
+  ansible.builtin.user:
+    name: dovecot
+    group: dovecot
+    uid: 993
+    home: /usr/local/share/dovecot
+    shell: /bin/false
+  tags: users
+
+- name: create dovenull group
+  ansible.builtin.group:
+    name: dovenull
+    gid: 994
+  tags: users
+
+- name: create dovenull user
+  ansible.builtin.user:
+    name: dovenull
+    group: dovenull
+    uid: 994
+    home: /nonexistent
+    shell: /bin/false
+  tags: users
+
+- name: "download and extract dovecot-{{ dovecot_version }}"
+  ansible.builtin.unarchive:
+    src: "{{ dovecot_remote_src }}"
+    dest: /usr/local/src
+    remote_src: yes
+    owner: root
+    group: root
+    mode: '0750'
+  tags: build
+
+- name: "configure dovecot-{{ dovecot_version }}"
+  command: >
+    ./configure --prefix=/usr/local \
+    --localstatedir=/var \
+    --sysconfdir=/etc \
+    --with-ssl=openssl \
+    --with-gnu-ld \
+    --with-pam \
+    --with-shadow
+  args:
+    chdir: "{{ dovecot_local_src }}"
+  register: command_out
+  changed_when: command_out.rc != 0
+  tags: build
+
+- name: "build and install dovecot-{{ dovecot_version }}"
+  command: "make -j{{ make_jobs }} install"
+  args:
+    chdir: "{{ dovecot_local_src }}"
+  register: command_out
+  changed_when: command_out.rc != 0
+  tags: build
+
+- name: create dovecot directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: dovecot
+    group: dovecot
+    mode: '0750'
+  with_items:
+    - /etc/dovecot
+    - /etc/dovecot/ssl
+    - /etc/dovecot/conf.d
+    - /var/dovecot
+  tags: configure
+
+- name: copy base dovecot configuration files
+  command: rsync -av /usr/local/share/doc/dovecot/example-config/ /etc/dovecot
+  args:
+    chdir: "{{ dovecot_local_src }}"
+  register: command_out
+  changed_when: command_out.rc != 0
+  tags: configure
+
+#- name: copy base dovecot configuration files
+#  ansible.builtin.synchronize:
+#    src: /usr/local/share/doc/dovecot/example-config/
+#    dest: /etc/dovecot
+
+- name: create dovecot base configuration
+  ansible.builtin.copy:
+    src: files/dovecot.conf
+    dest: /etc/dovecot/dovecot.conf
+    owner: dovecot
+    group: dovecot
+    mode: '0750'
+  tags: configure
+
+- name: create dovecot dhparam4096.pem
+  ansible.builtin.copy:
+    src: files/dhparam4096.pem
+    dest: /etc/dovecot/ssl/dhparam4096.pem
+    owner: dovecot
+    group: dovecot
+    mode: '0750'
+  tags: configure
+
+- name: create goddady intermediate certificate bundle
+  ansible.builtin.copy:
+    src: files/gd_bundle-g2-g1.crt
+    dest: /etc/dovecot/ssl/gd_bundle-g2-g1.pem
+    owner: dovecot
+    group: dovecot
+    mode: '0750'
+  tags: configure
+
+- name: create /etc/dovecot/ssl/mail.gturn.xyz.key
+  ansible.builtin.copy:
+    content: "{{ keys['mail.gturn.xyz'] }}"
+    dest: /etc/dovecot/ssl/mail.gturn.xyz.key
+    owner: dovecot
+    group: dovecot
+    mode: '0600'
+
+- name: create /etc/dovecot/ssl/mail.gturn.xyz.pem
+  ansible.builtin.copy:
+    content: "{{ certs['mail.gturn.xyz'] }}"
+    dest: /etc/dovecot/ssl/mail.gturn.xyz.pem
+    owner: dovecot
+    group: dovecot
+    mode: '0600'
+
+- name: create dovecot ssl configuration
+  ansible.builtin.copy:
+    src: files/10-ssl.conf
+    dest: /etc/dovecot/conf.d/10-ssl.conf
+    owner: dovecot
+    group: dovecot
+    mode: '0750'
+  tags: configure
+
+#- name: create dovecot systemd service
+#  ansible.builtin.copy:
+#    src: "files/{{ item }}"
+#    dest: "/lib/systemd/system/{{ item }}"
+#    owner: root
+#    group: root
+#    mode: '0640'
+#  with_items:
+#    - dovecot.socket
+#    - dovecot.service
+#  tags: build, configure
+
+#- name: reload systemd
+#  ansible.builtin.systemd:
+#    daemon-reload: yes
+#  tags: configure
+
+#- name: enable dovecot service
+#  ansible.builtin.systemd:
+#    name: dovecot
+#    enabled: yes
+#  tags: configure
+
+- name: "cleanup dovecot src"
+  ansible.builtin.file:
+    path: "/usr/local/src/{{ item }}"
+    state: absent
+  with_items:
+    - "{{ dovecot_local_src }}.tar.gz"
+    - "{{ dovecot_local_src }}"
+  tags: build
