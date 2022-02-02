@@ -1,6 +1,7 @@
 .vault
 __pycache__
-.env
+.env*
+users
 *.pem
 *.crt
 *.key
